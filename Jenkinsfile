@@ -2,15 +2,16 @@ pipeline {
     agent any
     tools {
         terraform 'terraform'
-    }
+}
 
     environment {
         PATH=sh(script:"echo $PATH:/usr/local/bin", returnStdout:true).trim()
-        AWS_REGION="us-east-1"
-        AWS_ACCOUNT_ID=sh(script:'export PATH:"$PATH:/usr/local.bin" && aws sts get-caller-identity --query Account --output text', returnStdout:true).trim
+        AWS_REGION = "us-east-1"
+        AWS_ACCOUNT_ID=sh(script:'export PATH="$PATH:/usr/local/bin" && aws sts get-caller-identity --query Account --output text', returnStdout:true).trim()
         ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         APP_REPO_NAME = "kimmigs/cw-todo-app"
         APP_NAME = "todo"
+
     }
 
     stages {
@@ -19,7 +20,7 @@ pipeline {
             steps {
                 echo 'Creating Infrastructure for the App on AWS Cloud'
                 sh 'terraform init'
-                sh 'terraform apply -auto-approve'
+                sh 'terraform apply --auto-approve'
             }
         }
 
@@ -28,7 +29,7 @@ pipeline {
                 echo 'Creating ECR Repo for App'
                 sh """
                 aws ecr create-repository \
-                  --respository-name ${APP_REPO_NAME} \
+                  --repository-name ${APP_REPO_NAME} \
                   --image-scanning-configuration scanOnPush=false \
                   --image-tag-mutability MUTABLE \
                   --region ${AWS_REGION}
@@ -36,7 +37,7 @@ pipeline {
             }
         }
 
-         stage('Build App Docker Image') {
+        stage('Build App Docker Image') {
             steps {
                 echo 'Building App Image'
                 script {
@@ -126,13 +127,3 @@ pipeline {
 
 
     }
-
-
-
-
-
-
-
-
-
-
